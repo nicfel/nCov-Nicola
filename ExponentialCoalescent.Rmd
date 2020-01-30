@@ -1,0 +1,213 @@
+---
+title: "Exponential Coalescent Analyses"
+author: "Nicola Mueller"
+date: '2020-01-28'
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+# Summary
+
+* There is signal to estimate evolutionary rates in the data based on date randomization tests.
+* The evolutionary rate of novel Coronavirus is estimated to be most likely somewhere between 1x10-3 and 2x10-3.
+* The tMRCA is quite uncertain, but is inferred to most likely around the beginning of December using a constant coalescent and mid December using en exponential coalescent model.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library("coda")
+library("colorblindr") 
+library(grid)
+library(gridExtra)
+library(ggtree)
+
+mask_prob = c(0,0.25,0.5)
+
+
+path = "/Users/nmueller/Documents/github/ncov-nm"
+
+# get log files
+expo_log = list.files(path=paste(path, "/out", sep=""), pattern="expo.*.log", full.names = T)
+# read in  rates
+expo_rates = read.table(file=paste(path, "/expo_rates.csv", sep=""), sep=",", header=F)
+for (i in seq(1,length(expo_log))){
+  tmp = strsplit(gsub(".log","",expo_log[[i]]), split="_")[[1]]
+  ind = as.numeric(tmp[2])
+  t = read.table(expo_log[[i]], sep="\t", header=T)
+  t=t[,c("TreeHeight", "clockRate", "ePopSize", "growthRate")]
+  t = t[-seq(1,length(t$Sample)/10),]
+  t$growth_prior = paste("growth sigma =", expo_rates[ind, "V2"])
+  t$dates = tmp[[3]]
+  t$date_rep = as.numeric(tmp[[4]])
+  t$masking = mask_prob[[as.numeric(tmp[[5]])]]
+  t$masking_rep = as.numeric(gsub("rep","",tmp[[6]]))
+  if (i==1){
+    expo_dat = t
+  }else{
+    expo_dat = rbind(expo_dat, t)
+  }
+}
+expo_dat[which(expo_dat$growth_prior=="growth sigma = 0.001"), "growth_prior"] = "constant coalescent"
+expo_dat[which(expo_dat$growth_prior=="growth sigma = 100"), "growth_prior"] = "exponential coalescent"
+
+mrsi = as.Date("2020-01-23")
+expo_dat$mrca = mrsi-expo_dat$TreeHeight*365
+```
+
+## Estimating the evolutionary rate of novel Coronavirus
+
+I here estimate the evolutionary rate of novel Coronavirus using different priors on the exponential growth rate. 
+This is done with the same sequences as in https://nextstrain.org/ncov.
+I used a strict clock model and an HKY + Gamma4 site model, treating every site the same. 
+Additionally, I only used the sites 1000-29000 from the aligned sequence file.
+For each of the analysis, the prior on the growth rate is normally distributed around 0 and the sigma of the normal distribution is varied.
+Using a sigma value 0.001 essentially assumes a constant population over time.
+For the exponential coalescent, I've used a normal distriubition around 0 and sigma=100
+I compare these rate estimates when using the true dates (results in blue) of each sample and then compare it to the estimates when randomizing the tip dates.
+Randomizing the tip dates essentially removes the time information from the sequence data and therefore removes the possibility to correctly estimate these rates.
+This randomization is done 10 times and the results are shown in orange.
+When then estimating the evolutionary rates, the prior information about the population dynamics is dominating.
+This therefore tells us how much information about the evolutionary rates there is in the data in absence of the population prior.
+In the plots, the outer bars approx. correspond to 95% intervals.
+
+```{r evolRate, warning=FALSE}
+expo_dat$x_offset = 1
+expo_dat[which(expo_dat$dates=="true"), "x_offset"] = 0
+
+p_evol = ggplot(expo_dat[which(expo_dat$masking==0), ]) +
+  geom_boxplot(aes(y=clockRate, x=x_offset+date_rep, group=interaction(dates,date_rep), color=dates),outlier.shape = NA) +
+  xlab("")+
+  ylab("evolutionary rate per site and year")+
+  scale_x_continuous(labels=c())+
+  facet_wrap(~growth_prior, ncol=2) +
+  scale_y_log10()+
+  scale_color_OkabeIto()+
+  theme_minimal()+
+  ggtitle("Evolutionary rates estimates using coalescent models\nwith different priors")
+
+plot(p_evol)
+```
+
+
+
+## Time of the most recent common ancestor using the coalescent with exponential growth
+
+For all the scenarios where we used the true sampling dates, we also estimated the time of the most recent common ancestor of all sequences.
+
+When assuming a constant population over time (constant coalescent), the tMRCA is inferred to be most likely at the beginning of December, while an exponentially growing population puts the tMRCA most likely somewhere mid December, but does not exlcude the beginning of December.
+
+
+```{r tMRCAexp, warning=FALSE}
+p_tmrca = ggplot(expo_dat[which(expo_dat$masking==0 & expo_dat$dates=="true"), ]) +
+  geom_density(aes(x=mrca, group=growth_prior, color=growth_prior)) +
+  xlab("")+
+  scale_x_date(limits=as.Date(c("2019-10-01", "2020-01-01")))+
+  ggtitle("Time of the most recent common ancestor") +
+  scale_color_OkabeIto(name=("population model"))+
+  theme_minimal()
+plot(p_tmrca)
+
+p_evol = ggplot(expo_dat[which(expo_dat$masking==0 & expo_dat$dates=="true"), ]) +
+  geom_density(aes(x=clockRate, color=growth_prior),outlier.shape = NA) +
+  xlab("")+
+  xlab("evolutionary rate per site and year")+
+  scale_color_OkabeIto()+
+  theme_minimal()+
+  ggtitle("Evolutionary rates estimates using coalescent models\nwith different priors")
+
+plot(p_evol)
+
+
+```
+
+## What is the tMRCA
+
+The time of the most recent common ancestor (or tMRCA), denotes the time when all the sequenced cases in a dataset last shared a common ancestor.
+It does not, for example, denote when a virus first entered the human population.
+In fact, the earliest time possible of the MRCA is the time of the zoonosis, if all sequenced cases are from the human population and zoonosis occured only once.
+
+![Example phylogeny where the time of the initial zoonosis is different from the most recent common ancestor of several sequenced cases](/Users/nmueller/Documents/github/ncov-nm/figures/zoonosis.png)
+
+## Estimating the evolutionary rate of novel Coronavirus when allowing for base calling errors
+
+To see what happens when we allow for errors in the consensus calls, I next randomly ignore SNPs that only occured once in the entire alignment of sequences.
+This is done at a probability of 0.25 and repeated 10 times.
+This means that every SNP that only occured once in the entire alignment has a probability of 0.25 to be replaced by an 'N' (i.e. could have been any base).
+I
+
+```{r evolRate_25, warning=FALSE}
+expo_dat$x_offset = 10
+expo_dat[which(expo_dat$dates=="true"), "x_offset"] = 0
+
+p_evol = ggplot(expo_dat[which(expo_dat$masking==0.25), ]) +
+  geom_boxplot(aes(y=clockRate, x=x_offset+date_rep+masking_rep, group=interaction(dates,date_rep,masking_rep)),outlier.shape = NA) +
+  xlab("")+
+  ylab("evolutionary rate per site and year")+
+  scale_x_continuous(labels=c())+
+  facet_wrap(~growth_prior, ncol=2) +
+    scale_y_log10()+
+  theme_minimal()+
+  ggtitle("Evolutionary rates estimates masking single mutations at a probability of 0.25")
+plot(p_evol)
+```
+
+
+## tMRCA estimate when masking random nucleotides
+
+When assuming that some of the mutations that only occured once in the alignment are due to false consensus calls, the inferred time of the most recent common ancestor is moved closer to mid December.
+The different curves denote different random masking iterations.
+
+```{r tMRCAexp_mask, warning=FALSE}
+p_tmrca = ggplot(expo_dat[which( expo_dat$dates=="true" & expo_dat$masking==0.25), ]) +
+  geom_density(aes(x=mrca, group=interaction(masking_rep,growth_prior)),outlier.shape = NA) +
+  xlab("")+
+  scale_x_date(limits=as.Date(c("2019-10-01", "2020-01-01")))+
+  facet_wrap(~growth_prior, ncol=2, scale="free_y")+
+  ggtitle("Time of the most recent common ancestor\nmasking single mutations at a probability of 0.25") +
+  theme_minimal()
+plot(p_tmrca)
+```
+
+## R0 estimates using the coalescent with exponential growth
+
+The R0 is computed from the the growth rate using different average duration of infectiousness and the inferred growth rates for the exponential coalescent
+The computation of the R0 is based on [the equation](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1766383/pdf/rspb20063754.pdf) and [here](https://tree.bio.ed.ac.uk/wiki/pages/t769F5D1/Relationship_between_R0_and_the_epidemic_growth_rate.html), assuming becoming uninfectious is exponentially distributed with average duration of infectiousness=1/becoming uninfectious rate.
+
+```{r R0expo, warning=FALSE}
+# compute the R0 for different becoming uninfectious rates
+average_infectious = c(15, 10, 5)
+
+becomin_uninfectious = 1/average_infectious*365
+
+expo_dat$R0 = 1+expo_dat$growthRate/36.5
+
+
+p_R0 = ggplot(expo_dat[which(expo_dat$dates=="true" & expo_dat$growth_prior=="exponential coalescent" & expo_dat$masking==0), ]) +
+  geom_density(aes(x=(1+growthRate/becomin_uninfectious[[1]]), color=factor(average_infectious[1]))) +
+  geom_density(aes(x=(1+growthRate/becomin_uninfectious[[2]]), color=factor(average_infectious[2]))) +
+  geom_density(aes(x=(1+growthRate/becomin_uninfectious[[3]]), color=factor(average_infectious[3]))) +
+  xlab("")+
+  facet_wrap(~masking, ncol=2) +
+  ggtitle("Estimate of R0 different becoming uninfectious rates") +
+  xlab("R0")+
+  theme_minimal()+
+  scale_color_manual(values=c('#999999','#E69F00', '#56B4E9'), name="average infectious period in days")
+  # theme(legend.title = element_text("average infectious period in days"))
+plot(p_R0)
+
+```
+
+## Genome data used
+
+These analyses have been made possible by the public sharing of data.
+The analysis here used the following sequences
+
+```{r data, echo=FALSE}
+library(knitr)
+data = read.table(file=paste(path, "/sequences_used.csv", sep=""), sep="|", header=T)
+kable(data)
+```
+ 

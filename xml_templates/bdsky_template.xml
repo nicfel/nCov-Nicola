@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><beast beautitemplate='Standard' beautistatus='' namespace="beast.core:beast.evolution.alignment:beast.evolution.tree.coalescent:beast.core.util:beast.evolution.nuc:beast.evolution.operators:beast.evolution.sitemodel:beast.evolution.substitutionmodel:beast.evolution.likelihood" required="" version="2.6">
+
+
+    <data
+id="sequences_meta"
+spec="Alignment">
+          insert_sequences
+    </data>
+
+
+
+
+
+
+
+
+
+<map name="Uniform" >beast.math.distributions.Uniform</map>
+<map name="Exponential" >beast.math.distributions.Exponential</map>
+<map name="LogNormal" >beast.math.distributions.LogNormalDistributionModel</map>
+<map name="Normal" >beast.math.distributions.Normal</map>
+<map name="Beta" >beast.math.distributions.Beta</map>
+<map name="Gamma" >beast.math.distributions.Gamma</map>
+<map name="LaplaceDistribution" >beast.math.distributions.LaplaceDistribution</map>
+<map name="prior" >beast.math.distributions.Prior</map>
+<map name="InverseGamma" >beast.math.distributions.InverseGamma</map>
+<map name="OneOnX" >beast.math.distributions.OneOnX</map>
+
+
+<run id="mcmc" spec="MCMC" chainLength="10000000">
+    <state id="state" spec="State" storeEvery="5000">
+        <tree id="Tree.t:sequences_meta_1" spec="beast.evolution.tree.Tree" name="stateNode">
+            <trait id="dateTrait.t:sequences_meta_1" spec="beast.evolution.tree.TraitSet" dateFormat="yyyy-M-dd" traitname="date" value="insert_sampling_times">
+                <taxa id="TaxonSet.sequences_meta_1" spec="TaxonSet">
+                    <alignment id="sequences_meta_1" spec="FilteredAlignment" filter="1::1">
+                        <data idref="sequences_meta"/>
+                    </alignment>
+                </taxa>
+            </trait>
+            <taxonset idref="TaxonSet.sequences_meta_1"/>
+        </tree>
+        <parameter id="clockRate.c:sequences_meta_1" spec="parameter.RealParameter" name="stateNode">1.0</parameter>
+        <parameter id="kappa.s:sequences_meta_1" spec="parameter.RealParameter" lower="0.0" name="stateNode">2.0</parameter>
+        <parameter id="gammaShape.s:sequences_meta_1" spec="parameter.RealParameter" name="stateNode">1.0</parameter>
+        <parameter id="kappa.s:sequences_meta_2" spec="parameter.RealParameter" lower="0.0" name="stateNode">2.0</parameter>
+        <parameter id="gammaShape.s:sequences_meta_2" spec="parameter.RealParameter" name="stateNode">1.0</parameter>
+        <parameter id="kappa.s:sequences_meta_3" spec="parameter.RealParameter" lower="0.0" name="stateNode">2.0</parameter>
+        <parameter id="gammaShape.s:sequences_meta_3" spec="parameter.RealParameter" name="stateNode">1.0</parameter>
+        <parameter id="origin_BDSKY_Serial.t:sequences_meta_1" spec="parameter.RealParameter" lower="0.0" name="stateNode" upper="Infinity">1000.0</parameter>
+        <parameter id="becomeUninfectiousRate_BDSKY_Serial.t:sequences_meta_1" spec="parameter.RealParameter" lower="0.0" name="stateNode" upper="Infinity">insert_uninfectious</parameter>
+        <parameter id="reproductiveNumber_BDSKY_Serial.t:sequences_meta_1" spec="parameter.RealParameter" dimension="1" lower="0.0" name="stateNode" upper="Infinity">2.0</parameter>
+        <parameter id="samplingProportion_BDSKY_Serial.t:sequences_meta_1" spec="parameter.RealParameter" lower="0.0" name="stateNode" upper="1.0">0.01</parameter>
+        <parameter id="freqParameter.s:sequences_meta_2" spec="parameter.RealParameter" dimension="4" lower="0.0" name="stateNode" upper="1.0">0.25</parameter>
+        <parameter id="freqParameter.s:sequences_meta_1" spec="parameter.RealParameter" dimension="4" lower="0.0" name="stateNode" upper="1.0">0.25</parameter>
+        <parameter id="freqParameter.s:sequences_meta_3" spec="parameter.RealParameter" dimension="4" lower="0.0" name="stateNode" upper="1.0">0.25</parameter>
+    </state>
+
+    <init id="RandomTree.t:sequences_meta_1" spec="beast.evolution.tree.RandomTree" estimate="false" initial="@Tree.t:sequences_meta_1" taxa="@sequences_meta_1">
+        <populationModel id="ConstantPopulation0.t:sequences_meta_1" spec="ConstantPopulation">
+            <parameter id="randomPopSize.t:sequences_meta_1" spec="parameter.RealParameter" name="popSize">1.0</parameter>
+        </populationModel>
+    </init>
+
+    <distribution id="posterior" spec="util.CompoundDistribution">
+        <distribution id="prior" spec="util.CompoundDistribution">
+            <distribution id="BDSKY_Serial.t:sequences_meta_1" spec="beast.evolution.speciation.BirthDeathSkylineModel" becomeUninfectiousRate="@becomeUninfectiousRate_BDSKY_Serial.t:sequences_meta_1" origin="@origin_BDSKY_Serial.t:sequences_meta_1" reproductiveNumber="@reproductiveNumber_BDSKY_Serial.t:sequences_meta_1" samplingProportion="@samplingProportion_BDSKY_Serial.t:sequences_meta_1" tree="@Tree.t:sequences_meta_1"/>
+            <prior id="becomeUninfectiousRatePrior_BDSKY_Serial.t:sequences_meta_1" name="distribution" x="@becomeUninfectiousRate_BDSKY_Serial.t:sequences_meta_1">
+                <LogNormal id="LogNormalDistributionModel.7" name="distr">
+                    <parameter id="RealParameter.52" spec="parameter.RealParameter" estimate="false" name="M">0.0</parameter>
+                    <parameter id="RealParameter.53" spec="parameter.RealParameter" estimate="false" name="S">1.0</parameter>
+                </LogNormal>
+            </prior>
+            <prior id="ClockPrior.c:sequences_meta_1" name="distribution" x="@clockRate.c:sequences_meta_1">
+                <LogNormal id="Uniform.3" name="distr" M="0.0015" S="0.25" meanInRealSpace="true"/>
+            </prior>
+            <prior id="FrequenciesPrior.s:sequences_meta_1" name="distribution" x="@freqParameter.s:sequences_meta_1">
+                <Uniform id="Uniform.12" name="distr"/>
+            </prior>
+            <prior id="FrequenciesPrior.s:sequences_meta_2" name="distribution" x="@freqParameter.s:sequences_meta_2">
+                <Uniform id="Uniform.12.sequences_meta_2" name="distr"/>
+            </prior>
+            <prior id="FrequenciesPrior.s:sequences_meta_3" name="distribution" x="@freqParameter.s:sequences_meta_3">
+                <Uniform id="Uniform.12.sequences_meta_3" name="distr"/>
+            </prior>
+            <prior id="GammaShapePrior.s:sequences_meta_1" name="distribution" x="@gammaShape.s:sequences_meta_1">
+                <Exponential id="Exponential.2" name="distr">
+                    <parameter id="RealParameter.5" spec="parameter.RealParameter" estimate="false" name="mean">1.0</parameter>
+                </Exponential>
+            </prior>
+            <prior id="GammaShapePrior.s:sequences_meta_2" name="distribution" x="@gammaShape.s:sequences_meta_2">
+                <Exponential id="Exponential.2.sequences_meta_2" name="distr">
+                    <parameter id="RealParameter.5.sequences_meta_2" spec="parameter.RealParameter" estimate="false" name="mean">1.0</parameter>
+                </Exponential>
+            </prior>
+            <prior id="GammaShapePrior.s:sequences_meta_3" name="distribution" x="@gammaShape.s:sequences_meta_3">
+                <Exponential id="Exponential.2.sequences_meta_3" name="distr">
+                    <parameter id="RealParameter.5.sequences_meta_3" spec="parameter.RealParameter" estimate="false" name="mean">1.0</parameter>
+                </Exponential>
+            </prior>
+            <prior id="KappaPrior.s:sequences_meta_1" name="distribution" x="@kappa.s:sequences_meta_1">
+                <LogNormal id="LogNormalDistributionModel.0" name="distr">
+                    <parameter id="RealParameter.12" spec="parameter.RealParameter" estimate="false" name="M">1.0</parameter>
+                    <parameter id="RealParameter.13" spec="parameter.RealParameter" estimate="false" name="S">1.25</parameter>
+                </LogNormal>
+            </prior>
+            <prior id="KappaPrior.s:sequences_meta_2" name="distribution" x="@kappa.s:sequences_meta_2">
+                <LogNormal id="LogNormalDistributionModel.0.sequences_meta_2" name="distr">
+                    <parameter id="RealParameter.12.sequences_meta_2" spec="parameter.RealParameter" estimate="false" name="M">1.0</parameter>
+                    <parameter id="RealParameter.13.sequences_meta_2" spec="parameter.RealParameter" estimate="false" name="S">1.25</parameter>
+                </LogNormal>
+            </prior>
+            <prior id="KappaPrior.s:sequences_meta_3" name="distribution" x="@kappa.s:sequences_meta_3">
+                <LogNormal id="LogNormalDistributionModel.0.sequences_meta_3" name="distr">
+                    <parameter id="RealParameter.12.sequences_meta_3" spec="parameter.RealParameter" estimate="false" name="M">1.0</parameter>
+                    <parameter id="RealParameter.13.sequences_meta_3" spec="parameter.RealParameter" estimate="false" name="S">1.25</parameter>
+                </LogNormal>
+            </prior>
+            <prior id="originPrior_BDSKY_Serial.t:sequences_meta_1" name="distribution" x="@origin_BDSKY_Serial.t:sequences_meta_1">
+                <LogNormal id="LogNormalDistributionModel.18" meanInRealSpace="true" name="distr">
+                    <parameter id="RealParameter.167" spec="parameter.RealParameter" estimate="false" name="M">insert_orign_prior</parameter>
+                    <parameter id="RealParameter.168" spec="parameter.RealParameter" estimate="false" lower="0.0" name="S" upper="5.0">0.25</parameter>
+                </LogNormal>
+            </prior>
+            <prior id="reproductiveNumberPrior_BDSKY_Serial.t:sequences_meta_1" name="distribution" x="@reproductiveNumber_BDSKY_Serial.t:sequences_meta_1">
+                <LogNormal id="LogNormalDistributionModel.8" name="distr" meanInRealSpace="true">
+                    <parameter id="RealParameter.54" spec="parameter.RealParameter" estimate="false" name="M">1.0</parameter>
+                    <parameter id="RealParameter.55" spec="parameter.RealParameter" estimate="false" name="S">1.0</parameter>
+                </LogNormal>
+            </prior>
+            <prior id="samplingProportionPrior_BDSKY_Serial.t:sequences_meta_1" name="distribution" x="@samplingProportion_BDSKY_Serial.t:sequences_meta_1">
+              <Exponential id="Exponential.2.sampling" name="distr" mean="insert_sampling_prop"/>
+              <!-- <Uniform id="Exponential.2.sampling" name="distr"/> -->
+                <!-- <Beta id="Beta.6" name="distr">
+                    <parameter id="RealParameter.56" spec="parameter.RealParameter" estimate="false" name="alpha">1.0</parameter>
+                    <parameter id="RealParameter.57" spec="parameter.RealParameter" estimate="false" name="beta">1.0</parameter>
+                </Beta> -->
+            </prior>
+        </distribution>
+        <distribution id="likelihood" spec="util.CompoundDistribution" useThreads="true">
+            <distribution id="treeLikelihood.sequences_meta_1" spec="ThreadedTreeLikelihood" data="@sequences_meta_1" tree="@Tree.t:sequences_meta_1">
+                <siteModel id="SiteModel.s:sequences_meta_1" spec="SiteModel" gammaCategoryCount="4" shape="@gammaShape.s:sequences_meta_1">
+                    <parameter id="mutationRate.s:sequences_meta_1" spec="parameter.RealParameter" estimate="false" name="mutationRate">1.0</parameter>
+                    <parameter id="proportionInvariant.s:sequences_meta_1" spec="parameter.RealParameter" estimate="false" lower="0.0" name="proportionInvariant" upper="1.0">0.0</parameter>
+                    <substModel id="hky.s:sequences_meta_1" spec="HKY" kappa="@kappa.s:sequences_meta_1">
+                        <frequencies id="estimatedFreqs.s:sequences_meta_1" spec="Frequencies" frequencies="@freqParameter.s:sequences_meta_1"/>
+                    </substModel>
+                </siteModel>
+                <branchRateModel id="StrictClock.c:sequences_meta_1" spec="beast.evolution.branchratemodel.StrictClockModel" clock.rate="@clockRate.c:sequences_meta_1"/>
+            </distribution>
+            <!-- <distribution id="treeLikelihood.sequences_meta_2" spec="ThreadedTreeLikelihood" branchRateModel="@StrictClock.c:sequences_meta_1" tree="@Tree.t:sequences_meta_1">
+                <data
+id="sequences_meta_2"
+spec="FilteredAlignment"
+data="@sequences_meta"
+filter="2::3"/>
+                <siteModel id="SiteModel.s:sequences_meta_2" spec="SiteModel" gammaCategoryCount="4" shape="@gammaShape.s:sequences_meta_2">
+                    <parameter id="mutationRate.s:sequences_meta_2" spec="parameter.RealParameter" estimate="false" name="mutationRate">1.0</parameter>
+                    <parameter id="proportionInvariant.s:sequences_meta_2" spec="parameter.RealParameter" estimate="false" lower="0.0" name="proportionInvariant" upper="1.0">0.0</parameter>
+                    <substModel id="hky.s:sequences_meta_2" spec="HKY" kappa="@kappa.s:sequences_meta_2">
+                        <frequencies id="estimatedFreqs.s:sequences_meta_2" spec="Frequencies" frequencies="@freqParameter.s:sequences_meta_2"/>
+                    </substModel>
+                </siteModel>
+            </distribution>
+            <distribution id="treeLikelihood.sequences_meta_3" spec="ThreadedTreeLikelihood" branchRateModel="@StrictClock.c:sequences_meta_1" tree="@Tree.t:sequences_meta_1">
+                <data
+id="sequences_meta_3"
+spec="FilteredAlignment"
+data="@sequences_meta"
+filter="3::3"/>
+                <siteModel id="SiteModel.s:sequences_meta_3" spec="SiteModel" gammaCategoryCount="4" shape="@gammaShape.s:sequences_meta_3">
+                    <parameter id="mutationRate.s:sequences_meta_3" spec="parameter.RealParameter" estimate="false" name="mutationRate">1.0</parameter>
+                    <parameter id="proportionInvariant.s:sequences_meta_3" spec="parameter.RealParameter" estimate="false" lower="0.0" name="proportionInvariant" upper="1.0">0.0</parameter>
+                    <substModel id="hky.s:sequences_meta_3" spec="HKY" kappa="@kappa.s:sequences_meta_3">
+                        <frequencies id="estimatedFreqs.s:sequences_meta_3" spec="Frequencies" frequencies="@freqParameter.s:sequences_meta_3"/>
+                    </substModel>
+                </siteModel>
+            </distribution> -->
+        </distribution>
+    </distribution>
+
+    <operator id="StrictClockRateScaler.c:sequences_meta_1" spec="ScaleOperator" parameter="@clockRate.c:sequences_meta_1" scaleFactor="0.75" weight="3.0"/>
+
+    <operator id="strictClockUpDownOperator.c:sequences_meta_1" spec="UpDownOperator" scaleFactor="0.75" weight="3.0">
+        <up idref="clockRate.c:sequences_meta_1"/>
+        <down idref="Tree.t:sequences_meta_1"/>
+    </operator>
+
+    <operator id="KappaScaler.s:sequences_meta_1" spec="ScaleOperator" parameter="@kappa.s:sequences_meta_1" scaleFactor="0.5" weight="0.1"/>
+
+    <operator id="gammaShapeScaler.s:sequences_meta_1" spec="ScaleOperator" parameter="@gammaShape.s:sequences_meta_1" scaleFactor="0.5" weight="0.1"/>
+
+    <!-- <operator id="KappaScaler.s:sequences_meta_2" spec="ScaleOperator" parameter="@kappa.s:sequences_meta_2" scaleFactor="0.5" weight="0.1"/>
+
+    <operator id="gammaShapeScaler.s:sequences_meta_2" spec="ScaleOperator" parameter="@gammaShape.s:sequences_meta_2" scaleFactor="0.5" weight="0.1"/>
+
+    <operator id="KappaScaler.s:sequences_meta_3" spec="ScaleOperator" parameter="@kappa.s:sequences_meta_3" scaleFactor="0.5" weight="0.1"/>
+
+    <operator id="gammaShapeScaler.s:sequences_meta_3" spec="ScaleOperator" parameter="@gammaShape.s:sequences_meta_3" scaleFactor="0.5" weight="0.1"/> -->
+
+    <operator id="BDSKY_SerialTreeScaler.t:sequences_meta_1" spec="ScaleOperator" scaleFactor="0.5" tree="@Tree.t:sequences_meta_1" weight="3.0"/>
+
+    <operator id="BDSKY_SerialTreeRootScaler.t:sequences_meta_1" spec="ScaleOperator" rootOnly="true" scaleFactor="0.5" tree="@Tree.t:sequences_meta_1" weight="3.0"/>
+
+    <operator id="BDSKY_SerialUniformOperator.t:sequences_meta_1" spec="Uniform" tree="@Tree.t:sequences_meta_1" weight="30.0"/>
+
+    <operator id="BDSKY_SerialSubtreeSlide.t:sequences_meta_1" spec="SubtreeSlide" tree="@Tree.t:sequences_meta_1" weight="15.0"/>
+
+    <operator id="BDSKY_SerialNarrow.t:sequences_meta_1" spec="Exchange" tree="@Tree.t:sequences_meta_1" weight="15.0"/>
+
+    <operator id="BDSKY_SerialWide.t:sequences_meta_1" spec="Exchange" isNarrow="false" tree="@Tree.t:sequences_meta_1" weight="3.0"/>
+
+    <operator id="BDSKY_SerialWilsonBalding.t:sequences_meta_1" spec="WilsonBalding" tree="@Tree.t:sequences_meta_1" weight="3.0"/>
+
+    <!-- <operator id="becomeUninfectiousRateScaler_BDSKY_Serial.t:sequences_meta_1" spec="ScaleOperator" parameter="@becomeUninfectiousRate_BDSKY_Serial.t:sequences_meta_1" scaleFactor="0.75" weight="2.0"/> -->
+
+    <operator id="reproductiveNumberScaler_BDSKY_Serial.t:sequences_meta_1" spec="ScaleOperator" parameter="@reproductiveNumber_BDSKY_Serial.t:sequences_meta_1" scaleFactor="0.75" weight="10.0"/>
+
+    <operator id="samplingProportionScaler_BDSKY_Serial.t:sequences_meta_1" spec="ScaleOperator" parameter="@samplingProportion_BDSKY_Serial.t:sequences_meta_1" scaleFactor="0.75" weight="10.0"/>
+
+    <operator id="updownBD_BDSKY_Serial.t:sequences_meta_1" spec="UpDownOperator" scaleFactor="0.75" weight="2.0">
+        <up idref="reproductiveNumber_BDSKY_Serial.t:sequences_meta_1"/>
+        <!-- <down idref="becomeUninfectiousRate_BDSKY_Serial.t:sequences_meta_1"/> -->
+    </operator>
+
+    <operator id="origScaler_BDSKY_Serial.t:sequences_meta_1" spec="ScaleOperator" parameter="@origin_BDSKY_Serial.t:sequences_meta_1" scaleFactor="0.75" weight="1.0"/>
+
+    <operator id="FrequenciesExchanger.s:sequences_meta_2" spec="DeltaExchangeOperator" delta="0.01" weight="0.1">
+        <parameter idref="freqParameter.s:sequences_meta_2"/>
+    </operator>
+
+    <!-- <operator id="FrequenciesExchanger.s:sequences_meta_1" spec="DeltaExchangeOperator" delta="0.01" weight="0.1">
+        <parameter idref="freqParameter.s:sequences_meta_1"/>
+    </operator>
+
+    <operator id="FrequenciesExchanger.s:sequences_meta_3" spec="DeltaExchangeOperator" delta="0.01" weight="0.1">
+        <parameter idref="freqParameter.s:sequences_meta_3"/>
+    </operator> -->
+
+    <logger id="tracelog" spec="Logger" fileName="$(filebase).log" logEvery="50000" model="@posterior" sanitiseHeaders="true" sort="smart">
+        <log idref="posterior"/>
+        <log idref="likelihood"/>
+        <log idref="prior"/>
+        <!-- <log idref="treeLikelihood.sequences_meta_2"/>
+        <log idref="treeLikelihood.sequences_meta_3"/> -->
+        <log idref="treeLikelihood.sequences_meta_1"/>
+        <log id="TreeHeight.t:sequences_meta_1" spec="beast.evolution.tree.TreeHeightLogger" tree="@Tree.t:sequences_meta_1"/>
+        <log idref="clockRate.c:sequences_meta_1"/>
+        <log idref="kappa.s:sequences_meta_1"/>
+        <log idref="gammaShape.s:sequences_meta_1"/>
+        <!-- <log idref="kappa.s:sequences_meta_2"/>
+        <log idref="gammaShape.s:sequences_meta_2"/>
+        <log idref="kappa.s:sequences_meta_3"/>
+        <log idref="gammaShape.s:sequences_meta_3"/> -->
+        <log idref="BDSKY_Serial.t:sequences_meta_1"/>
+        <log idref="origin_BDSKY_Serial.t:sequences_meta_1"/>
+        <log idref="becomeUninfectiousRate_BDSKY_Serial.t:sequences_meta_1"/>
+        <log idref="reproductiveNumber_BDSKY_Serial.t:sequences_meta_1"/>
+        <log idref="samplingProportion_BDSKY_Serial.t:sequences_meta_1"/>
+        <!-- <log idref="freqParameter.s:sequences_meta_2"/> -->
+        <log idref="freqParameter.s:sequences_meta_1"/>
+        <!-- <log idref="freqParameter.s:sequences_meta_3"/> -->
+    </logger>
+
+    <logger id="screenlog" spec="Logger" logEvery="50000">
+        <log idref="posterior"/>
+        <log idref="likelihood"/>
+        <log idref="prior"/>
+    </logger>
+
+    <logger id="treelog.t:sequences_meta_1" spec="Logger" fileName="$(filebase).trees" logEvery="50000" mode="tree">
+        <log id="TreeWithMetaDataLogger.t:sequences_meta_1" spec="beast.evolution.tree.TreeWithMetaDataLogger" tree="@Tree.t:sequences_meta_1"/>
+    </logger>
+
+</run>
+
+</beast>
